@@ -22,13 +22,12 @@ pub trait ServiceClient: Sized {
     type Creds: DeserializeOwned;
 
     async fn new() -> Result<Self> {
-        trace!("constructing {} client", Self::NAME);
+        trace!("logging into {}", Self::NAME);
 
         let prefix = format!("MWA_{}_", Self::NAME.to_uppercase());
         let creds = envy::prefixed(prefix).from_env::<Self::Creds>()?;
 
         let mut client = Self::_create(creds).await?;
-        trace!("logging into {}", Self::NAME);
         client._login().await?;
         Ok(client)
     }
