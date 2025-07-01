@@ -4,7 +4,7 @@ use mwa::{BskyClient, DiscordClient, MastodonClient, ServiceClient, TwitterClien
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    dotenvy::dotenv()?;
+    _ = dotenvy::dotenv();
     init_logging();
     info!(
         "MCSR-Weekly-Automation v{} - {}",
