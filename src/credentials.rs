@@ -1,5 +1,6 @@
 use crate::service::{
     bluesky::BlueskyCredentials, discord::DiscordCredentials, mastodon::MastodonCredentials,
+    twitter::TwitterCredentials,
 };
 use anyhow::Result;
 use serde::Deserialize;
@@ -11,7 +12,7 @@ pub struct Credentials {
     pub bluesky: BlueskyCredentials,
     pub discord: DiscordCredentials,
     pub mastodon: MastodonCredentials,
-    // pub twitter: TwitterCredentials,
+    pub twitter: TwitterCredentials,
 }
 
 static CREDENTIALS: OnceLock<Credentials> = OnceLock::new();

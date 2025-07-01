@@ -42,7 +42,9 @@ pub async fn post(post: PostContent) -> Result<()> {
 
 async fn get_client() -> Result<&'static Http> {
     async fn build_client() -> Result<Http> {
-        let client = HttpBuilder::new(credentials::get().discord.bot_token.clone())
+        let creds = &credentials::get().discord;
+
+        let client = HttpBuilder::new(creds.bot_token.clone())
             .client(http::get_client())
             .default_allowed_mentions(CreateAllowedMentions::new())
             .build();

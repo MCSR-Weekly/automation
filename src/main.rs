@@ -26,11 +26,11 @@ async fn main() -> Result<()> {
     info!("MCSR-Weekly-Automation v{}", env!("CARGO_PKG_VERSION"));
 
     let content = PostContent {
-        message: "MCSR Weekly Issue #4 is now available!".to_string(),
-        embed_title: "Title".to_string(),
-        embed_desc: "description".to_string(),
+        message: "MCSR Weekly Issue #2 is now available!".to_string(),
+        embed_title: "Dummy Title".to_string(),
+        embed_desc: "Dummy Description".to_string(),
         url: "https://mcsrweekly.net/posts/test".to_string(),
-        raw_text: "MCSR Weekly issue #4 is now available!\nhttps://mcsrweekly.net/posts/test"
+        raw_text: "MCSR Weekly issue #2 is now available!\nhttps://mcsrweekly.net/issue/2"
             .to_string(),
     };
     info!("Content to post: {content:#?}");
@@ -40,6 +40,7 @@ async fn main() -> Result<()> {
     bluesky::post(content.clone()).await?;
     discord::post(content.clone()).await?;
     mastodon::post(content.clone()).await?;
+    twitter::post(content.clone()).await?;
 
     Ok(())
 }

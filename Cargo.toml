@@ -53,3 +53,8 @@ features = ["native_tls_backend", "http", "model", "builder"]
 git = "https://github.com/dscottboggs/mastodon-async.git"
 branch = "comb"
 default-features = false
+
+# -- twitter --
+
+[dependencies.tweety-rs]
+version = "0.1.5"
