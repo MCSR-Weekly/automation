@@ -1,64 +1,84 @@
-use crate::{PostContent, credentials, http};
+use crate::{TextPost, get_http_client};
 use anyhow::Result;
+use log::info;
 use serde::Deserialize;
 use serenity::builder::{CreateAllowedMentions, CreateMessage};
 use serenity::http::{Http, HttpBuilder};
 use serenity::model::id::GenericChannelId;
 use serenity::secrets::Token;
-use tokio::sync::OnceCell;
 
-#[derive(Debug, Deserialize)]
-pub struct DiscordCredentials {
-    bot_token: Token,
+/// Discord client
+///
+/// # Credentials
+/// - `MWA_DISCORD_TOKEN`
+///
+/// # Config
+/// - `MWA_DISCORD_ANNOUCEMENTS_CHANNEL` - [DiscordClient::post]
+pub struct DiscordClient {
+    // access to discord's REST api, via serenity
+    http: Http,
+    config: DiscordConfig,
+}
+
+#[derive(Deserialize)]
+struct DiscordConfig {
     announcements_channel: GenericChannelId,
 }
 
-// --
+impl DiscordClient {
+    pub async fn new() -> Result<Self> {
+        info!("logging in...");
 
-pub async fn post(post: PostContent) -> Result<()> {
-    info!("posting to discord");
+        // -- load credentials --
 
-    let http = get_client().await?;
-    let announcements_channel = credentials::get().discord.announcements_channel;
+        #[derive(Deserialize)]
+        struct Creds {
+            token: Token,
+            #[serde(flatten)]
+            config: DiscordConfig,
+        }
+        let creds = envy::prefixed("MWA_DISCORD_").from_env::<Creds>()?;
 
-    // let embed = CreateEmbed::new()
-    //     .author(CreateEmbedAuthor::new("MCSR Weekly"))
-    //     .title(post.embed_title)
-    //     .description(post.embed_desc)
-    //     .url(post.url)
-    //     .timestamp(Timestamp::now());
-    // let message_builder = CreateMessage::new().content(post.message).embed(embed);
-    let message_builder = CreateMessage::new().content(post.message);
+        // -- create client --
 
-    let discord_message = announcements_channel
-        .send_message(http, message_builder)
-        .await?;
-    discord_message.crosspost(http).await?;
-
-    Ok(())
-}
-
-// --
-
-async fn get_client() -> Result<&'static Http> {
-    async fn build_client() -> Result<Http> {
-        let creds = &credentials::get().discord;
-
-        let client = HttpBuilder::new(creds.bot_token.clone())
-            .client(http::get_client())
+        let http = HttpBuilder::new(creds.token)
+            .client(get_http_client())
             .default_allowed_mentions(CreateAllowedMentions::new())
             .build();
 
-        let bot_user = client.get_current_user().await?;
-        info!(
-            "authenticated as bot `{}` ({})",
-            bot_user.tag(),
-            bot_user.id
-        );
+        // -- check login status --
 
-        Ok(client)
+        let me = http.get_current_user().await?;
+        info!("authenticated as bot `{}` ({})", me.tag(), me.id);
+
+        // --
+
+        Ok(DiscordClient {
+            http,
+            config: creds.config,
+        })
     }
 
-    static CLIENT: OnceCell<Http> = OnceCell::const_new();
-    CLIENT.get_or_try_init(build_client).await
+    pub async fn post(&self, post: TextPost) -> Result<()> {
+        info!("posting to discord");
+
+        // -- load config --
+
+        let announcements_channel = self.config.announcements_channel;
+
+        // -- build post --
+
+        let message_builder = CreateMessage::new().content(post.content);
+
+        // -- submit to api --
+
+        let discord_message = announcements_channel
+            .send_message(&self.http, message_builder)
+            .await?;
+        discord_message.crosspost(&self.http).await?;
+
+        // --
+
+        Ok(())
+    }
 }

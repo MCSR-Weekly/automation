@@ -1,25 +1,44 @@
 [package]
-name = "mcsr-weekly"
-version = "0.1.1"
+name = "mwa"
+version = "0.2.0"
 edition = "2024"
 license = "MIT"
 publish = false
 
-[dependencies]
-toml = "0.8"
-anyhow = "1"
-log = "0.4"
-env_logger = "0.11"
+# ===== Dependencies =====
 
-# -- utils --
+# -- errors --
 
-[dependencies.tokio]
-version = "1.45"
-features = ["full"]
+[dependencies.anyhow]
+version = "1"
+
+# -- logging --
+
+[dependencies.log]
+version = "0.4"
+
+[dependencies.env_logger]
+version = "0.11"
+
+# -- process --
+
+[dependencies.dotenvy]
+version = "0.15"
+
+# -- serde --
 
 [dependencies.serde]
 version = "1"
 features = ["derive", "rc"]
+
+[dependencies.envy]
+version = "0.4"
+
+# -- runtime --
+
+[dependencies.tokio]
+version = "1.45"
+features = ["full"]
 
 # -- http --
 
@@ -33,7 +52,6 @@ features = ["native-tls"]
 [dependencies.bsky-sdk]
 version = "0.1"
 default-features = false
-features = ["default-client"]
 
 [dependencies.atrium-xrpc-client]
 version = "0.5"
@@ -59,3 +77,11 @@ default-features = false
 
 [dependencies.tweety-rs]
 version = "0.1.5"
+
+# ===== Lints =====
+
+[lints.rust]
+unnameable_types = "warn"
+unreachable_pub = "warn"
+elided_lifetimes_in_paths = "deny"
+unsafe_op_in_unsafe_fn = "deny"
