@@ -1,0 +1,55 @@
+[package]
+name = "mcsr-weekly"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+
+[dependencies]
+toml = "0.8"
+anyhow = "1"
+log = "0.4"
+env_logger = "0.11"
+
+# -- utils --
+
+[dependencies.tokio]
+version = "1.45"
+features = ["full"]
+
+[dependencies.serde]
+version = "1"
+features = ["derive", "rc"]
+
+# -- http --
+
+[dependencies.reqwest]
+version = "0.12"
+default-features = false
+features = ["native-tls"]
+
+# -- bluesky --
+
+[dependencies.bsky-sdk]
+version = "0.1"
+default-features = false
+features = ["default-client"]
+
+[dependencies.atrium-xrpc-client]
+version = "0.5"
+default-features = false
+features = ["reqwest"]
+
+# -- discord --
+
+[dependencies.serenity]
+git = "https://github.com/serenity-rs/serenity.git"
+branch = "next"
+default-features = false
+features = ["native_tls_backend", "http", "model", "builder"]
+
+# -- mastodon --
+
+[dependencies.mastodon-async]
+git = "https://github.com/dscottboggs/mastodon-async.git"
+branch = "comb"
+default-features = false
