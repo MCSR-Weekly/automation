@@ -16,3 +16,17 @@ pub struct RichPost {
 pub struct TextPost {
     pub content: String,
 }
+
+// --
+
+impl From<Post> for RichPost {
+    fn from(post: Post) -> Self {
+        post.rich
+    }
+}
+
+impl From<Post> for TextPost {
+    fn from(post: Post) -> Self {
+        post.text
+    }
+}

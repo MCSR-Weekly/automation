@@ -1,12 +1,11 @@
 use serde::Deserialize;
 use std::fmt;
-use std::sync::Arc;
 
 // not debug printed
 #[derive(Clone, Deserialize)]
 #[serde(transparent)]
 pub struct SecretString {
-    inner: Arc<str>,
+    inner: String,
 }
 
 impl fmt::Debug for SecretString {

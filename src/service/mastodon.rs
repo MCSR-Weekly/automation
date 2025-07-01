@@ -1,4 +1,4 @@
-use crate::{SecretString, TextPost, get_http_client};
+use crate::{SecretString, ServiceClient, TextPost, get_http_client};
 use anyhow::Result;
 use log::info;
 use mastodon_async::{Language, Mastodon, NewStatusBuilder, Visibility};
@@ -16,23 +16,20 @@ pub struct MastodonClient {
     client: Mastodon,
 }
 
-impl MastodonClient {
-    pub async fn new() -> Result<Self> {
-        info!("logging in...");
+#[derive(Deserialize)]
+#[expect(unnameable_types)]
+pub struct Creds {
+    instance: String,
+    client_key: SecretString,
+    client_secret: SecretString,
+    access_token: SecretString,
+}
 
-        // -- load credentials --
+impl ServiceClient for MastodonClient {
+    const NAME: &'static str = "mastodon";
+    type Creds = Creds;
 
-        #[derive(Deserialize)]
-        struct Creds {
-            instance: String,
-            client_key: SecretString,
-            client_secret: SecretString,
-            access_token: SecretString,
-        }
-        let creds = envy::prefixed("MWA_MASTODON_").from_env::<Creds>()?;
-
-        // -- create client --
-
+    async fn _create(creds: Creds) -> Result<Self> {
         let client_data = mastodon_async::Data {
             base: creds.instance.into(),
             client_id: creds.client_key.expose_secret().to_string().into(),
@@ -42,33 +39,28 @@ impl MastodonClient {
         };
         let client = Mastodon::new(get_http_client(), client_data);
 
-        // -- check login status --
-
-        let app = client.verify_app().await?;
-        let account = client.verify_credentials().await?;
-        info!("app `{}` authenticated for @{}", app.name, account.username);
-
-        // --
-
         Ok(MastodonClient { client })
     }
 
-    pub async fn post(&self, post: TextPost) -> Result<()> {
-        info!("posting to discord");
+    async fn _login(&mut self) -> Result<()> {
+        let app = self.client.verify_app().await?;
+        let account = self.client.verify_credentials().await?;
+        info!(
+            "authenticated as @{} via app `{}`",
+            account.username, app.name
+        );
 
-        // -- build post --
+        Ok(())
+    }
 
+    type CreatePostInput = TextPost;
+    async fn create_post(&self, post: TextPost) -> Result<()> {
         let status = NewStatusBuilder::default()
             .status(post.content)
             .visibility(Visibility::Private) // FIXME remove
             .language(Language::Eng) // English
             .build()?;
-
-        // -- submit to api --
-
         self.client.new_status(status).await?;
-
-        // --
 
         Ok(())
     }

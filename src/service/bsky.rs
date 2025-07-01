@@ -1,4 +1,4 @@
-use crate::{RichPost, SecretString, get_http_client};
+use crate::{RichPost, SecretString, ServiceClient, get_http_client};
 use anyhow::Result;
 use atrium_xrpc_client::reqwest::{ReqwestClient, ReqwestClientBuilder};
 use bsky_sdk::BskyAgent;
@@ -17,26 +17,24 @@ use std::str::FromStr;
 /// - `MWA_BSKY_PASSWORD`
 pub struct BskyClient {
     agent: BskyAgent<ReqwestClient>,
+    creds: Creds,
 }
 
-impl BskyClient {
-    pub async fn new() -> Result<Self> {
-        info!("logging in...");
+#[derive(Deserialize)]
+#[expect(unnameable_types)]
+pub struct Creds {
+    endpoint: String,
+    username: String,
+    password: SecretString,
+}
 
-        // -- load credentials --
+impl ServiceClient for BskyClient {
+    const NAME: &'static str = "bsky";
+    type Creds = Creds;
 
-        #[derive(Deserialize)]
-        struct Creds {
-            endpoint: String,
-            username: String,
-            password: SecretString,
-        }
-        let creds = envy::prefixed("MWA_BSKY_").from_env::<Creds>()?;
-
-        // -- create client --
-
+    async fn _create(creds: Creds) -> Result<Self> {
         let config = Config {
-            endpoint: creds.endpoint,
+            endpoint: creds.endpoint.clone(),
             session: None,
             labelers_header: None,
             proxy_header: None,
@@ -51,24 +49,22 @@ impl BskyClient {
             .build()
             .await?;
 
-        // -- check login status --
+        Ok(BskyClient { agent, creds })
+    }
 
-        let me = agent
-            .login(&creds.username, creds.password.expose_secret())
+    async fn _login(&mut self) -> Result<()> {
+        let me = self
+            .agent
+            .login(&self.creds.username, self.creds.password.expose_secret())
             .await?;
         info!("authenticated as `{}`", me.handle.as_str());
 
-        // --
-
-        Ok(BskyClient { agent })
+        Ok(())
     }
 
-    pub async fn post(&self, post: RichPost) -> Result<()> {
-        info!("posting to bluesky");
-
-        // -- build post --
-
-        // least deranged bsky codebase
+    // least deranged bsky codebase
+    type CreatePostInput = RichPost;
+    async fn create_post(&self, post: RichPost) -> Result<()> {
         let embed = bsky_sdk::api::app::bsky::feed::post::RecordEmbedRefs::AppBskyEmbedExternalMain(
             Box::new(
                 bsky_sdk::api::app::bsky::embed::external::MainData {
@@ -84,8 +80,6 @@ impl BskyClient {
             ),
         );
 
-        // -- submit to api --
-
         self.agent
             .create_record(bsky_sdk::api::app::bsky::feed::post::RecordData {
                 created_at: Datetime::now(),
@@ -99,8 +93,6 @@ impl BskyClient {
                 text: post.message,
             })
             .await?;
-
-        // --
 
         Ok(())
     }

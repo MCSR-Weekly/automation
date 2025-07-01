@@ -1,6 +1,9 @@
 use anyhow::Result;
 use log::info;
-use mwa::{BskyClient, DiscordClient, MastodonClient, Post, RichPost, TextPost, TwitterClient};
+use mwa::{
+    BskyClient, DiscordClient, MastodonClient, Post, RichPost, ServiceClient, TextPost,
+    TwitterClient,
+};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -27,16 +30,16 @@ async fn main() -> Result<()> {
     info!("Content to post: {post:#?}");
 
     let bsky = BskyClient::new().await?;
-    bsky.post(post.rich.clone()).await?;
+    bsky.create_post(post.rich.clone()).await?;
 
     let discord = DiscordClient::new().await?;
-    discord.post(post.text.clone()).await?;
+    discord.create_post(post.text.clone()).await?;
 
     let mastodon = MastodonClient::new().await?;
-    mastodon.post(post.text.clone()).await?;
+    mastodon.create_post(post.text.clone()).await?;
 
     let twitter = TwitterClient::new().await?;
-    twitter.post(post.text.clone()).await?;
+    twitter.create_post(post.text.clone()).await?;
 
     Ok(())
 }

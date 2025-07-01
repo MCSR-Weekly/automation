@@ -1,4 +1,4 @@
-use crate::{SecretString, TextPost};
+use crate::{SecretString, ServiceClient, TextPost};
 use anyhow::Result;
 use log::{info, trace};
 use serde::Deserialize;
@@ -18,57 +18,54 @@ pub struct TwitterClient {
     client: TweetyClient,
 }
 
-impl TwitterClient {
-    pub async fn new() -> Result<Self> {
-        info!("logging in...");
+#[derive(Deserialize)]
+#[expect(unnameable_types)]
+pub struct Creds {
+    api_key: SecretString,
+    api_secret: SecretString,
+    access_token: SecretString,
+    access_secret: SecretString,
+}
 
-        // -- load credentials --
+impl ServiceClient for TwitterClient {
+    const NAME: &'static str = "twitter";
+    type Creds = Creds;
 
-        #[derive(Deserialize)]
-        struct Creds {
-            api_key: SecretString,
-            api_secret: SecretString,
-            access_token: SecretString,
-            access_secret: SecretString,
-        }
-        let creds = envy::prefixed("MWA_TWITTER_").from_env::<Creds>()?;
-
-        // -- create client --
-
+    async fn _create(creds: Creds) -> Result<Self> {
         let client = TweetyClient::new(
             creds.api_key.expose_secret(),
             creds.access_token.expose_secret(),
             creds.api_secret.expose_secret(),
             creds.access_secret.expose_secret(),
         );
-        let client = TwitterClient { client };
 
-        // -- check login status --
+        Ok(TwitterClient { client })
+    }
 
+    async fn _login(&mut self) -> Result<()> {
         #[derive(Deserialize)]
         struct CurrentUser {
             // id: String,
             // name: String,
             username: String,
         }
-        let me: ApiResponse<CurrentUser> = client.req(async |c| c.get_user_me(None).await).await?;
+        let me: ApiResponse<CurrentUser> = self.req(async |c| c.get_user_me(None).await).await?;
         info!("authenticated as @{}", me.data.username);
-
-        // --
-
-        Ok(client)
-    }
-
-    pub async fn post(&self, post: TextPost) -> Result<()> {
-        info!("posting to twitter");
-
-        self.client.post_tweet(&post.content, None).await?;
 
         Ok(())
     }
 
-    // --
+    type CreatePostInput = TextPost;
+    async fn create_post(&self, post: TextPost) -> Result<()> {
+        self.client.post_tweet(&post.content, None).await?;
 
+        Ok(())
+    }
+}
+
+// -- api util --
+
+impl TwitterClient {
     async fn req<T: DeserializeOwned>(
         &self,
         f: impl AsyncFnOnce(&TweetyClient) -> Result<ResponseWithHeaders, TweetyError>,
@@ -79,8 +76,6 @@ impl TwitterClient {
         Ok(T::deserialize(response)?)
     }
 }
-
-// --
 
 #[derive(Deserialize)]
 struct ApiResponse<Data> {

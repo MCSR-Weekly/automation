@@ -1,4 +1,4 @@
-use crate::{TextPost, get_http_client};
+use crate::{ServiceClient, TextPost, get_http_client};
 use anyhow::Result;
 use log::info;
 use serde::Deserialize;
@@ -17,41 +17,31 @@ use serenity::secrets::Token;
 pub struct DiscordClient {
     // access to discord's REST api, via serenity
     http: Http,
-    config: DiscordConfig,
+    config: Config,
 }
 
 #[derive(Deserialize)]
-struct DiscordConfig {
+#[expect(unnameable_types)]
+pub struct Creds {
+    token: Token,
+    #[serde(flatten)]
+    config: Config,
+}
+
+#[derive(Deserialize)]
+struct Config {
     announcements_channel: GenericChannelId,
 }
 
-impl DiscordClient {
-    pub async fn new() -> Result<Self> {
-        info!("logging in...");
+impl ServiceClient for DiscordClient {
+    const NAME: &'static str = "discord";
+    type Creds = Creds;
 
-        // -- load credentials --
-
-        #[derive(Deserialize)]
-        struct Creds {
-            token: Token,
-            #[serde(flatten)]
-            config: DiscordConfig,
-        }
-        let creds = envy::prefixed("MWA_DISCORD_").from_env::<Creds>()?;
-
-        // -- create client --
-
+    async fn _create(creds: Creds) -> Result<Self> {
         let http = HttpBuilder::new(creds.token)
             .client(get_http_client())
             .default_allowed_mentions(CreateAllowedMentions::new())
             .build();
-
-        // -- check login status --
-
-        let me = http.get_current_user().await?;
-        info!("authenticated as bot `{}` ({})", me.tag(), me.id);
-
-        // --
 
         Ok(DiscordClient {
             http,
@@ -59,25 +49,22 @@ impl DiscordClient {
         })
     }
 
-    pub async fn post(&self, post: TextPost) -> Result<()> {
-        info!("posting to discord");
+    async fn _login(&mut self) -> Result<()> {
+        let me = self.http.get_current_user().await?;
+        info!("authenticated as bot `{}` ({})", me.tag(), me.id);
 
-        // -- load config --
+        Ok(())
+    }
 
+    type CreatePostInput = TextPost;
+    async fn create_post(&self, post: TextPost) -> Result<()> {
         let announcements_channel = self.config.announcements_channel;
 
-        // -- build post --
-
         let message_builder = CreateMessage::new().content(post.content);
-
-        // -- submit to api --
-
         let discord_message = announcements_channel
             .send_message(&self.http, message_builder)
             .await?;
         discord_message.crosspost(&self.http).await?;
-
-        // --
 
         Ok(())
     }

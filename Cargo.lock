@@ -1690,7 +1690,7 @@ dependencies = [
 
 [[package]]
 name = "mwa"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "atrium-xrpc-client",
