@@ -4,7 +4,7 @@ use std::fmt;
 // not debug printed
 #[derive(Clone, Deserialize)]
 #[serde(transparent)]
-pub struct SecretString {
+pub(crate) struct SecretString {
     inner: String,
 }
 
@@ -17,7 +17,7 @@ impl fmt::Debug for SecretString {
 impl SecretString {
     #[inline]
     #[must_use]
-    pub fn expose_secret(&self) -> &str {
+    pub(crate) fn expose_secret(&self) -> &str {
         &self.inner
     }
 }

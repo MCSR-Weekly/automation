@@ -5,7 +5,7 @@ use std::sync::OnceLock;
 ///
 /// We use this when building api wrapper clients as we want to set some options
 /// for all connections (user agent etc)
-pub fn get_http_client() -> Client {
+pub(crate) fn get_http_client() -> Client {
     fn build_client() -> Client {
         const USER_AGENT: &str = concat!("MCSR-Weekly-Automation/", env!("CARGO_PKG_VERSION"));
 

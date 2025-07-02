@@ -5,7 +5,6 @@ use bsky_sdk::BskyAgent;
 use bsky_sdk::agent::BskyAtpAgentBuilder;
 use bsky_sdk::agent::config::Config;
 use bsky_sdk::api::types::string::{Datetime, Language};
-use log::info;
 use serde::Deserialize;
 use std::str::FromStr;
 
@@ -15,14 +14,13 @@ use std::str::FromStr;
 /// - `MWA_BSKY_ENDPOINT`
 /// - `MWA_BSKY_USERNAME`
 /// - `MWA_BSKY_PASSWORD`
-pub struct BskyClient {
+pub(crate) struct BskyClient {
     agent: BskyAgent<ReqwestClient>,
     creds: Creds,
 }
 
 #[derive(Deserialize)]
-#[expect(unnameable_types)]
-pub struct Creds {
+pub(crate) struct Creds {
     endpoint: String,
     username: String,
     password: SecretString,
@@ -57,7 +55,7 @@ impl ServiceClient for BskyClient {
             .agent
             .login(&self.creds.username, self.creds.password.expose_secret())
             .await?;
-        info!("authenticated as `{}`", me.handle.as_str());
+        info!("successfully authenticated as `{}`", me.handle.as_str());
 
         Ok(())
     }

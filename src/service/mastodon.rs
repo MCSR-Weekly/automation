@@ -1,6 +1,5 @@
 use crate::{SecretString, ServiceClient, TextPost, get_http_client};
 use anyhow::Result;
-use log::info;
 use mastodon_async::{Language, Mastodon, NewStatusBuilder, Visibility};
 use serde::Deserialize;
 use std::borrow::Cow;
@@ -12,13 +11,12 @@ use std::borrow::Cow;
 /// - `MWA_MASTODON_CLIENT_KEY`
 /// - `MWA_MASTODON_CLIENT_SECRET`
 /// - `MWA_MASTODON_ACCESS_TOKEN`
-pub struct MastodonClient {
+pub(crate) struct MastodonClient {
     client: Mastodon,
 }
 
 #[derive(Deserialize)]
-#[expect(unnameable_types)]
-pub struct Creds {
+pub(crate) struct Creds {
     instance: String,
     client_key: SecretString,
     client_secret: SecretString,
@@ -46,8 +44,10 @@ impl ServiceClient for MastodonClient {
         let app = self.client.verify_app().await?;
         let account = self.client.verify_credentials().await?;
         info!(
-            "authenticated as @{} via app `{}`",
-            account.username, app.name
+            "successfully authenticated as @{}@{} via app `{}`",
+            account.username,
+            account.url.domain().unwrap(), // this is so dumb i hate it
+            app.name,
         );
 
         Ok(())

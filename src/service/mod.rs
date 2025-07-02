@@ -3,26 +3,25 @@ mod discord;
 mod mastodon;
 mod twitter;
 
-pub use self::bsky::BskyClient;
-pub use self::discord::DiscordClient;
-pub use self::mastodon::MastodonClient;
-pub use self::twitter::TwitterClient;
+pub(crate) use self::bsky::BskyClient;
+pub(crate) use self::discord::DiscordClient;
+pub(crate) use self::mastodon::MastodonClient;
+pub(crate) use self::twitter::TwitterClient;
 
 // --
 
 use crate::Post;
 use anyhow::Result;
-use log::trace;
 use serde::de::DeserializeOwned;
 
 #[allow(async_fn_in_trait)]
-pub trait ServiceClient: Sized {
+pub(crate) trait ServiceClient: Sized {
     const NAME: &'static str;
 
     type Creds: DeserializeOwned;
 
     async fn new() -> Result<Self> {
-        trace!("logging into {}", Self::NAME);
+        trace!("authenticating with {}", Self::NAME);
 
         let prefix = format!("MWA_{}_", Self::NAME.to_uppercase());
         let creds = envy::prefixed(prefix).from_env::<Self::Creds>()?;

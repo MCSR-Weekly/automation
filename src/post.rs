@@ -1,20 +1,20 @@
 #[derive(Debug, Clone)]
-pub struct Post {
-    pub rich: RichPost,
-    pub text: TextPost,
+pub(crate) struct Post {
+    pub(crate) rich: RichPost,
+    pub(crate) text: TextPost,
 }
 
 #[derive(Debug, Clone)]
-pub struct RichPost {
-    pub message: String,
-    pub embed_title: String,
-    pub embed_desc: String,
-    pub url: String,
+pub(crate) struct RichPost {
+    pub(crate) message: String,
+    pub(crate) embed_title: String,
+    pub(crate) embed_desc: String,
+    pub(crate) url: String,
 }
 
 #[derive(Debug, Clone)]
-pub struct TextPost {
-    pub content: String,
+pub(crate) struct TextPost {
+    pub(crate) content: String,
 }
 
 // --

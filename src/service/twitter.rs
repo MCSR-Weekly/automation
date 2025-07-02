@@ -1,6 +1,5 @@
 use crate::{SecretString, ServiceClient, TextPost};
 use anyhow::Result;
-use log::{info, trace};
 use serde::Deserialize;
 use serde::de::DeserializeOwned;
 use tweety_rs::TweetyClient;
@@ -14,13 +13,12 @@ use tweety_rs::types::types::ResponseWithHeaders;
 /// - `MWA_TWITTER_API_SECRET`
 /// - `MWA_TWITTER_ACCESS_TOKEN`
 /// - `MWA_TWITTER_ACCESS_SECRET`
-pub struct TwitterClient {
+pub(crate) struct TwitterClient {
     client: TweetyClient,
 }
 
 #[derive(Deserialize)]
-#[expect(unnameable_types)]
-pub struct Creds {
+pub(crate) struct Creds {
     api_key: SecretString,
     api_secret: SecretString,
     access_token: SecretString,
@@ -50,7 +48,7 @@ impl ServiceClient for TwitterClient {
             username: String,
         }
         let me: ApiResponse<CurrentUser> = self.req(async |c| c.get_user_me(None).await).await?;
-        info!("authenticated as @{}", me.data.username);
+        info!("successfully authenticated as @{}", me.data.username);
 
         Ok(())
     }
@@ -71,7 +69,7 @@ impl TwitterClient {
         f: impl AsyncFnOnce(&TweetyClient) -> Result<ResponseWithHeaders, TweetyError>,
     ) -> Result<T> {
         let response = f(&self.client).await?.response;
-        trace!("{response}");
+        trace!("{response}"); // FIXME
 
         Ok(T::deserialize(response)?)
     }

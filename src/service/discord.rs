@@ -1,6 +1,5 @@
 use crate::{ServiceClient, TextPost, get_http_client};
 use anyhow::Result;
-use log::info;
 use serde::Deserialize;
 use serenity::builder::{CreateAllowedMentions, CreateMessage};
 use serenity::http::{Http, HttpBuilder};
@@ -14,15 +13,14 @@ use serenity::secrets::Token;
 ///
 /// # Config
 /// - `MWA_DISCORD_ANNOUCEMENTS_CHANNEL` - [DiscordClient::post]
-pub struct DiscordClient {
+pub(crate) struct DiscordClient {
     // access to discord's REST api, via serenity
     http: Http,
     config: Config,
 }
 
 #[derive(Deserialize)]
-#[expect(unnameable_types)]
-pub struct Creds {
+pub(crate) struct Creds {
     token: Token,
     #[serde(flatten)]
     config: Config,
@@ -51,7 +49,11 @@ impl ServiceClient for DiscordClient {
 
     async fn _login(&mut self) -> Result<()> {
         let me = self.http.get_current_user().await?;
-        info!("authenticated as bot `{}` ({})", me.tag(), me.id);
+        info!(
+            "successfully authenticated as bot `{}` ({})",
+            me.tag(),
+            me.id
+        );
 
         Ok(())
     }
